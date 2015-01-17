@@ -5,54 +5,48 @@
  */
 
 var UI = require('ui');
-var Vector2 = require('vector2');
-
-var main = new UI.Card({
-  title: 'Pebble.js',
-  icon: 'images/menu_icon.png',
-  subtitle: 'Hello World!',
-  body: 'Press any button.'
+// Create a Card with title and subtitle
+var card = new UI.Card({
+  title:'Weather',
+  subtitle:'Fetching...'
 });
 
-main.show();
+// Display the Card
+card.show();
 
-main.on('click', 'up', function(e) {
-  var menu = new UI.Menu({
-    sections: [{
-      items: [{
-        title: 'Pebble.js',
-        icon: 'images/menu_icon.png',
-        subtitle: 'Can do Menus'
-      }, {
-        title: 'Second Item',
-        subtitle: 'Subtitle Text'
-      }]
-    }]
-  });
-  menu.on('select', function(e) {
-    console.log('Selected item #' + e.itemIndex + ' of section #' + e.sectionIndex);
-    console.log('The item is titled "' + e.item.title + '"');
-  });
-  menu.show();
-});
+var ajax = require('ajax');
+// Construct URL
+// Taking weather data from OpenWeatherMap.org
+var cityName = 'Portland';
+var URL = 'http://api.openweathermap.org/data/2.5/weather?q=' + cityName;
 
-main.on('click', 'select', function(e) {
-  var wind = new UI.Window();
-  var textfield = new UI.Text({
-    position: new Vector2(0, 50),
-    size: new Vector2(144, 30),
-    font: 'gothic-24-bold',
-    text: 'Text Anywhere!',
-    textAlign: 'center'
-  });
-  wind.add(textfield);
-  wind.show();
-});
+// Make the request
+ajax(
+  {
+    url: URL,
+    type: 'json'
+  },
+  function(data) {
+    // Success!
+    console.log('Successfully fetched weather data!');
 
-main.on('click', 'down', function(e) {
-  var card = new UI.Card();
-  card.title('A Card');
-  card.subtitle('Is a Window');
-  card.body('The simplest window type in Pebble.js.');
-  card.show();
-});
+    // Extract data
+    var location = data.name;
+    var temperature = (Math.round(data.main.temp - 273.15)* 1.8000 + 32.00) + 'F';
+    
+    // Always upper-case first letter of description
+    var description = data.weather[0].description;
+    description = description.charAt(0).toUpperCase() + description.substring(1);
+    
+    // Show to user
+    card.subtitle(location + ', ' + temperature);
+    card.body(description);
+  
+  },
+  
+  function(error) {
+    // Failure!
+    console.log('Failed fetching weather data: ' + error);
+  }
+);
+
