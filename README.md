@@ -1,2 +1,2 @@
 # PebbleWeather
-A simple weather application for the pebble using Pebble.js
+A weather application for the pebble using Pebble.js
