@@ -1,6 +1,8 @@
 var UI = require('ui');
 var Vector2 = require('vector2');
 var ajax = require('ajax');
+var Accel = require('ui/accel');
+var Vibe = require('ui/vibe');
 
 var parseFeed = function(data, quantity) {
   var items = [];
@@ -45,7 +47,7 @@ splashWindow.show();
 // Make request to openweathermap.org
 ajax(
   {
-    url:'http://api.openweathermap.org/data/2.5/forecast?q=London',
+    url:'http://api.openweathermap.org/data/2.5/forecast?q=Detroit',
     type:'json'
   },
   function(data) {
@@ -59,11 +61,65 @@ ajax(
         items: menuItems
       }]
     });
+    
+    // Add an action for SELECT
+    resultsMenu.on('select', function(e) {
+        //console.log('Item number ' + e.itemIndex + ' was pressed!');
+        // Get that forecast
+        var forecast = data.list[e.itemIndex];
+      
+        // Assemble body string
+        var content = data.list[e.itemIndex].weather[0].description;
+      
+        // Capitalize first letter
+        content = content.charAt(0).toUpperCase() + content.substring(1);
+      
+        // Add temperature, pressure etc
+        content += '\nTemperature: ' + Math.round((forecast.main.temp - 273.15) * 1.8000 + 32.00) + '°F' + '\nPressure: ' + 
+          Math.round(forecast.main.pressure) + ' mbar' + '\nWind: ' + Math.round(forecast.wind.speed) + 
+          ' mph, ' + Math.round(forecast.wind.deg) + '°';
+      
+      
+        // Create the Card for detailed view
+        var detailCard = new UI.Card({
+          title:'Details',
+          subtitle:e.item.subtitle,
+          body: content
+        });
+        detailCard.show();
+      });
+    
     // Show the Menu, hide the splash
     resultsMenu.show();
     splashWindow.hide();
+    // Register for 'tap' events
+    resultsMenu.on('accelTap', function(e) {
+    // Make another request to openweathermap.org
+      ajax(
+        {
+          url:'http://api.openweathermap.org/data/2.5/forecast?q=London',
+          type:'json'
+        },
+        function(data) {
+          // Create an array of Menu items
+          var newItems = parseFeed(data, 10);
+        
+          // Update the Menu's first section
+          resultsMenu.items(0, newItems);
+          
+          // Notify the user
+          Vibe.vibrate('short');
+        },
+        function(error) {
+          console.log('Download failed: ' + error);
+        }
+      );
+    });
   },
   function(error) {
     console.log('Download failed: ' + error);
   }
 );
+
+// Prepare the accelerometer
+Accel.init();
